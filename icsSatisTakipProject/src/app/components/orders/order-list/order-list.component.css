@@ -1,0 +1,44 @@
+.order-list {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Tablo Stilleri */
+.table th {
+  border-top: none;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Badge Stilleri */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 768px) {
+  .order-list {
+    padding: 1rem;
+  }
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.3s ease-out;
+} 

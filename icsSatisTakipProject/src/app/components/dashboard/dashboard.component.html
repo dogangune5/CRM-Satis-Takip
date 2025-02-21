@@ -1,0 +1,230 @@
+<div class="dashboard">
+    <!-- Filtre ve Arama Alanı -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex gap-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary">
+                        <i class="bi bi-search text-light"></i>
+                    </span>
+                    <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="Ara...">
+                </div>
+                <select class="form-select bg-dark text-light border-secondary" style="width: auto;">
+                    <option value="all">Tüm Kayıtlar</option>
+                    <option value="today">Bugün</option>
+                    <option value="week">Bu Hafta</option>
+                    <option value="month">Bu Ay</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark text-light border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-primary">Toplam Müşteri</h6>
+                            <h2 class="card-title mb-0">256</h2>
+                        </div>
+                        <div class="fs-1 text-primary opacity-75">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-success small">
+                        <i class="bi bi-arrow-up"></i> %12 artış
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark text-light border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-success">Açık Fırsatlar</h6>
+                            <h2 class="card-title mb-0">45</h2>
+                        </div>
+                        <div class="fs-1 text-success opacity-75">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-success small">
+                        <i class="bi bi-arrow-up"></i> 8 yeni fırsat
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark text-light border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-warning">Bekleyen Ödemeler</h6>
+                            <h2 class="card-title mb-0">₺125K</h2>
+                        </div>
+                        <div class="fs-1 text-warning opacity-75">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-danger small">
+                        <i class="bi bi-arrow-down"></i> 3 gecikmiş ödeme
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark text-light border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2 text-info">Toplam Satış</h6>
+                            <h2 class="card-title mb-0">₺890K</h2>
+                        </div>
+                        <div class="fs-1 text-info opacity-75">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-success small">
+                        <i class="bi bi-arrow-up"></i> %15 artış
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Satış Grafiği -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-light border-secondary h-100">
+                <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Satış Grafiği</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-calendar3"></i> Bu Ay
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-calendar3"></i> Bu Yıl
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas #salesChart></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Son Müşteriler -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-secondary h-100">
+                <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Son Müşteriler</h5>
+                    <button class="btn btn-sm btn-outline-primary" routerLink="/customers">Tümünü Gör</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @for (customer of recentCustomers; track customer.id) {
+                        <a [routerLink]="['/customers', customer.id]"
+                            class="list-group-item bg-dark text-light border-secondary">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ customer.name }}</h6>
+                                    <small class="text-muted">{{ customer.company }}</small>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge" [ngClass]="getLeadTypeBadgeClass(customer.leadType)">
+                                        {{ customer.leadType }}
+                                    </span>
+                                    <span class="badge" [ngClass]="getStatusBadgeClass(customer.status)">
+                                        {{ customer.status }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Açık Fırsatlar -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Açık Fırsatlar</h5>
+                    <button class="btn btn-sm btn-outline-success">Tümünü Gör</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Müşteri</th>
+                                    <th>Proje</th>
+                                    <th>Değer</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>ABC Şirketi</td>
+                                    <td>E-ticaret Sistemi</td>
+                                    <td>₺75.000</td>
+                                    <td><span class="badge bg-warning">Görüşme Aşamasında</span></td>
+                                </tr>
+                                <tr>
+                                    <td>XYZ Ltd.</td>
+                                    <td>Mobil Uygulama</td>
+                                    <td>₺120.000</td>
+                                    <td><span class="badge bg-info">Teklif Hazırlanıyor</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bekleyen Ödemeler -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Bekleyen Ödemeler</h5>
+                    <button class="btn btn-sm btn-outline-warning">Tümünü Gör</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Fatura No</th>
+                                    <th>Müşteri</th>
+                                    <th>Tutar</th>
+                                    <th>Son Ödeme</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#INV-001</td>
+                                    <td>Demir İnşaat</td>
+                                    <td>₺45.000</td>
+                                    <td><span class="badge bg-danger">Gecikmiş</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#INV-002</td>
+                                    <td>Kaya Holding</td>
+                                    <td>₺80.000</td>
+                                    <td><span class="badge bg-warning">Bu Hafta</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,112 @@
+.opportunity-list {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Kanban Görünümü Stilleri */
+.kanban-board {
+  min-height: calc(100vh - 300px);
+}
+
+.kanban-column {
+  height: calc(100vh - 300px);
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.opportunity-card {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.opportunity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.opportunity-card .card-body {
+  padding: 0.75rem;
+}
+
+.opportunity-card .card-title {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.opportunity-card .card-text {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  color: #adb5bd;
+}
+
+/* Tablo Stilleri */
+.table th {
+  border-top: none;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Badge Stilleri */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+/* Scrollbar Stilleri */
+.kanban-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kanban-column::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.kanban-column::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.kanban-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 768px) {
+  .opportunity-list {
+    padding: 1rem;
+  }
+
+  .kanban-board {
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+
+  .kanban-board .row {
+    flex-wrap: nowrap;
+    margin-right: 0;
+  }
+
+  .kanban-board .col {
+    min-width: 280px;
+  }
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.3s ease-out;
+}

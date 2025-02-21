@@ -1,0 +1,148 @@
+<div class="container-fluid">
+    <!-- Üst Başlık ve Butonlar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>{{ proposal.title }}</h2>
+            <p class="text-muted mb-0">Teklif No: {{ proposal.proposalNumber }}</p>
+        </div>
+        <div>
+            <button class="btn btn-primary me-2" (click)="editProposal()">
+                <i class="bi bi-pencil"></i> Düzenle
+            </button>
+            <button class="btn btn-outline-secondary">
+                <i class="bi bi-printer"></i> Yazdır
+            </button>
+        </div>
+    </div>
+
+    <!-- Durum ve Özet Bilgiler -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="badge" [ngClass]="getStatusBadgeClass(proposal.status)">
+                            {{ proposal.status }}
+                        </span>
+                        <small class="text-muted">Son Güncelleme: {{ proposal.updatedAt | date:'medium' }}</small>
+                    </div>
+                    <p class="mb-0">{{ proposal.description }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Özet Bilgiler</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ara Toplam:</span>
+                        <span>{{ proposal.subTotal | currency:'TRY':'symbol-narrow':'1.2-2' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>KDV:</span>
+                        <span>{{ proposal.taxTotal | currency:'TRY':'symbol-narrow':'1.2-2' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>İndirim:</span>
+                        <span>{{ proposal.discountTotal | currency:'TRY':'symbol-narrow':'1.2-2' }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Genel Toplam:</span>
+                        <span>{{ proposal.grandTotal | currency:'TRY':'symbol-narrow':'1.2-2' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teklif Kalemleri -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Teklif Kalemleri</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tür</th>
+                            <th>Ad</th>
+                            <th>Açıklama</th>
+                            <th class="text-end">Miktar</th>
+                            <th class="text-end">Birim Fiyat</th>
+                            <th class="text-end">KDV (%)</th>
+                            <th class="text-end">İndirim (%)</th>
+                            <th class="text-end">Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of proposal.items">
+                            <td>{{ item.type }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.description }}</td>
+                            <td class="text-end">{{ item.quantity }}</td>
+                            <td class="text-end">{{ item.unitPrice | currency:'TRY':'symbol-narrow':'1.2-2' }}</td>
+                            <td class="text-end">{{ item.tax }}</td>
+                            <td class="text-end">{{ item.discount || 0 }}</td>
+                            <td class="text-end">{{ item.total | currency:'TRY':'symbol-narrow':'1.2-2' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Şartlar ve Notlar -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Şartlar ve Koşullar</h5>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0">{{ proposal.terms }}</pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notlar</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ proposal.notes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktiviteler -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Aktiviteler</h5>
+            <button class="btn btn-sm btn-outline-primary" (click)="addActivity()">
+                <i class="bi bi-plus"></i> Yeni Aktivite
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="timeline">
+                <div class="timeline-item" *ngFor="let activity of activities">
+                    <div class="timeline-icon">
+                        <i [class]="getActivityIcon(activity.type)"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0">{{ activity.title }}</h6>
+                            <span class="badge" [ngClass]="getActivityStatusClass(activity.status)">
+                                {{ activity.status }}
+                            </span>
+                        </div>
+                        <p class="mb-1">{{ activity.description }}</p>
+                        <small class="text-muted">{{ activity.date | date:'medium' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

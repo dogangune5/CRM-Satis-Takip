@@ -1,0 +1,115 @@
+<div class="payment-form">
+    <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()" class="needs-validation">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-credit-card me-2"></i>
+                    {{ isEditMode ? 'Ödeme Düzenle' : 'Yeni Ödeme' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Temel Bilgiler -->
+                    <div class="col-md-4">
+                        <label for="paymentNumber" class="form-label">Ödeme No*</label>
+                        <input type="text" class="form-control" id="paymentNumber" formControlName="paymentNumber"
+                            [ngClass]="{'is-invalid': isFieldInvalid('paymentNumber')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('paymentNumber') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="customerId" class="form-label">Müşteri ID*</label>
+                        <input type="number" class="form-control" id="customerId" formControlName="customerId"
+                            [ngClass]="{'is-invalid': isFieldInvalid('customerId')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('customerId') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="orderId" class="form-label">Sipariş ID</label>
+                        <input type="number" class="form-control" id="orderId" formControlName="orderId">
+                    </div>
+
+                    <!-- Ödeme Detayları -->
+                    <div class="col-md-4">
+                        <label for="type" class="form-label">Ödeme Tipi*</label>
+                        <select class="form-select" id="type" formControlName="type"
+                            [ngClass]="{'is-invalid': isFieldInvalid('type')}">
+                            <option value="">Seçiniz</option>
+                            @for (type of paymentTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('type') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="amount" class="form-label">Tutar*</label>
+                        <input type="number" class="form-control" id="amount" formControlName="amount"
+                            [ngClass]="{'is-invalid': isFieldInvalid('amount')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('amount') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Durum*</label>
+                        <select class="form-select" id="status" formControlName="status"
+                            [ngClass]="{'is-invalid': isFieldInvalid('status')}">
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('status') }}
+                        </div>
+                    </div>
+
+                    <!-- Tarih Bilgileri -->
+                    <div class="col-md-6">
+                        <label for="paymentDate" class="form-label">Ödeme Tarihi*</label>
+                        <input type="date" class="form-control" id="paymentDate" formControlName="paymentDate"
+                            [ngClass]="{'is-invalid': isFieldInvalid('paymentDate')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('paymentDate') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="dueDate" class="form-label">Vade Tarihi</label>
+                        <input type="date" class="form-control" id="dueDate" formControlName="dueDate">
+                    </div>
+
+                    <!-- Açıklama ve Notlar -->
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" formControlName="description"
+                            rows="2"></textarea>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control" id="notes" formControlName="notes" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                        <i class="bi bi-x-lg me-2"></i>
+                        İptal
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="paymentForm.invalid">
+                        <i class="bi bi-check-lg me-2"></i>
+                        {{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

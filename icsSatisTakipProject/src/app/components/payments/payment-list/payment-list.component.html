@@ -1,0 +1,155 @@
+<div class="payment-list">
+    <!-- Filtre ve Arama Alanı -->
+    <div class="card bg-dark text-light border-secondary mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary">
+                            <i class="bi bi-search text-light"></i>
+                        </span>
+                        <input type="text" class="form-control bg-dark border-secondary text-light"
+                            placeholder="Ödeme Ara..." [(ngModel)]="filter.searchTerm" (ngModelChange)="onSearch()">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex gap-2">
+                        <select class="form-select bg-dark text-light border-secondary" [(ngModel)]="filter.status"
+                            (ngModelChange)="onFilterChange()">
+                            <option [ngValue]="undefined">Tüm Durumlar</option>
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <select class="form-select bg-dark text-light border-secondary" [(ngModel)]="filter.type"
+                            (ngModelChange)="onFilterChange()">
+                            <option [ngValue]="undefined">Tüm Ödeme Tipleri</option>
+                            @for (type of paymentTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                            }
+                        </select>
+                        <button class="btn btn-primary" (click)="addPayment()">
+                            <i class="bi bi-plus-lg me-2"></i>Yeni Ödeme
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ödeme Listesi -->
+    <div class="card bg-dark text-light border-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th (click)="onSort('paymentNumber')" style="cursor: pointer">
+                                Ödeme No
+                                <i class="bi" [ngClass]="getSortIcon('paymentNumber')"></i>
+                            </th>
+                            <th (click)="onSort('type')" style="cursor: pointer">
+                                Ödeme Tipi
+                                <i class="bi" [ngClass]="getSortIcon('type')"></i>
+                            </th>
+                            <th (click)="onSort('amount')" style="cursor: pointer">
+                                Tutar
+                                <i class="bi" [ngClass]="getSortIcon('amount')"></i>
+                            </th>
+                            <th (click)="onSort('status')" style="cursor: pointer">
+                                Durum
+                                <i class="bi" [ngClass]="getSortIcon('status')"></i>
+                            </th>
+                            <th (click)="onSort('paymentDate')" style="cursor: pointer">
+                                Ödeme Tarihi
+                                <i class="bi" [ngClass]="getSortIcon('paymentDate')"></i>
+                            </th>
+                            <th (click)="onSort('dueDate')" style="cursor: pointer">
+                                Vade Tarihi
+                                <i class="bi" [ngClass]="getSortIcon('dueDate')"></i>
+                            </th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (payment of filteredPayments; track payment.id) {
+                        <tr>
+                            <td>{{ payment.paymentNumber }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="getPaymentTypeBadgeClass(payment.type)">
+                                    {{ payment.type }}
+                                </span>
+                            </td>
+                            <td>₺{{ payment.amount | number }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="getStatusBadgeClass(payment.status)">
+                                    {{ payment.status }}
+                                </span>
+                            </td>
+                            <td>{{ payment.paymentDate | date:'dd.MM.yyyy' }}</td>
+                            <td>{{ payment.dueDate | date:'dd.MM.yyyy' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" (click)="viewPayment(payment)"
+                                        title="Görüntüle">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" (click)="editPayment(payment)"
+                                        title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" (click)="deletePayment(payment)"
+                                        title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                        @if (filteredPayments.length === 0) {
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Kayıt bulunamadı
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Sayfalama -->
+        <div class="card-footer bg-dark border-secondary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Toplam {{ pagination.totalItems }} kayıttan {{ startItem }}-{{ endItem }} arası gösteriliyor
+                </div>
+                @if (pagination.totalPages > 1) {
+                <nav>
+                    <ul class="pagination mb-0">
+                        <li class="page-item" [class.disabled]="pagination.currentPage === 1">
+                            <a class="page-link bg-dark border-secondary" href="#"
+                                (click)="onPageChange(pagination.currentPage - 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        @for (page of [].constructor(pagination.totalPages); track $index) {
+                        <li class="page-item" [class.active]="pagination.currentPage === $index + 1">
+                            <a class="page-link bg-dark border-secondary" href="#" (click)="onPageChange($index + 1)">
+                                {{ $index + 1 }}
+                            </a>
+                        </li>
+                        }
+                        <li class="page-item" [class.disabled]="pagination.currentPage === pagination.totalPages">
+                            <a class="page-link bg-dark border-secondary" href="#"
+                                (click)="onPageChange(pagination.currentPage + 1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                }
+            </div>
+        </div>
+    </div>
+</div>

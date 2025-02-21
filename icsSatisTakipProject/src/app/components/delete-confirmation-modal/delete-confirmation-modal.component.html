@@ -1,0 +1,33 @@
+@if (showModal) {
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Başlık -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                    {{ title }}
+                </h5>
+                <button type="button" class="btn-close" (click)="onCancel()"></button>
+            </div>
+
+            <!-- Modal İçerik -->
+            <div class="modal-body">
+                <p class="mb-0">{{ message }}</p>
+            </div>
+
+            <!-- Modal Butonları -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                    <i class="bi bi-x-lg me-2"></i>
+                    {{ cancelButtonText }}
+                </button>
+                <button type="button" class="btn btn-danger" (click)="onConfirm()">
+                    <i class="bi bi-trash me-2"></i>
+                    {{ confirmButtonText }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}

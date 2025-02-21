@@ -1,0 +1,94 @@
+.payment-form {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.payment-form .card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.payment-form .card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.payment-form .form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.payment-form .form-control,
+.payment-form .form-select {
+  background-color: #2b3035;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.payment-form .form-control:focus,
+.payment-form .form-select:focus {
+  background-color: #2b3035;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  color: #fff;
+}
+
+.payment-form .form-control:disabled,
+.payment-form .form-control[readonly],
+.payment-form .form-select:disabled,
+.payment-form .form-select[readonly] {
+  background-color: #343a40;
+}
+
+.payment-form .invalid-feedback {
+  font-size: 0.875rem;
+}
+
+.payment-form .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.payment-form .btn:hover {
+  transform: translateY(-1px);
+}
+
+.payment-form .btn:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .payment-form {
+    padding: 0.5rem;
+  }
+
+  .payment-form .row {
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+  }
+
+  .payment-form [class*="col-"] {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+
+  .payment-form .btn {
+    padding: 0.375rem 0.75rem;
+  }
+}

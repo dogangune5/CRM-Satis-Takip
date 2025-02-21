@@ -1,0 +1,98 @@
+<div class="opportunity-form">
+    <form [formGroup]="opportunityForm" (ngSubmit)="onSubmit()" class="needs-validation">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    {{ isEditMode ? 'Fırsat Düzenle' : 'Yeni Fırsat' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Başlık -->
+                    <div class="col-md-12">
+                        <label for="title" class="form-label">Başlık*</label>
+                        <input type="text" class="form-control" id="title" formControlName="title"
+                            [ngClass]="{'is-invalid': isFieldInvalid('title')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('title') }}
+                        </div>
+                    </div>
+
+                    <!-- Açıklama -->
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Açıklama*</label>
+                        <textarea class="form-control" id="description" formControlName="description" rows="3"
+                            [ngClass]="{'is-invalid': isFieldInvalid('description')}"></textarea>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('description') }}
+                        </div>
+                    </div>
+
+                    <!-- Değer -->
+                    <div class="col-md-4">
+                        <label for="value" class="form-label">Değer (₺)*</label>
+                        <input type="number" class="form-control" id="value" formControlName="value"
+                            [ngClass]="{'is-invalid': isFieldInvalid('value')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('value') }}
+                        </div>
+                    </div>
+
+                    <!-- Olasılık -->
+                    <div class="col-md-4">
+                        <label for="probability" class="form-label">Olasılık (%)*</label>
+                        <input type="number" class="form-control" id="probability" formControlName="probability"
+                            [ngClass]="{'is-invalid': isFieldInvalid('probability')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('probability') }}
+                        </div>
+                    </div>
+
+                    <!-- Durum -->
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Durum*</label>
+                        <select class="form-select" id="status" formControlName="status"
+                            [ngClass]="{'is-invalid': isFieldInvalid('status')}">
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('status') }}
+                        </div>
+                    </div>
+
+                    <!-- Tahmini Kapanış Tarihi -->
+                    <div class="col-md-6">
+                        <label for="expectedCloseDate" class="form-label">Tahmini Kapanış Tarihi*</label>
+                        <input type="date" class="form-control" id="expectedCloseDate"
+                            formControlName="expectedCloseDate"
+                            [ngClass]="{'is-invalid': isFieldInvalid('expectedCloseDate')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('expectedCloseDate') }}
+                        </div>
+                    </div>
+
+                    <!-- Notlar -->
+                    <div class="col-md-12">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control" id="notes" formControlName="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                        <i class="bi bi-x-lg me-2"></i>
+                        İptal
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="opportunityForm.invalid">
+                        <i class="bi bi-check-lg me-2"></i>
+                        {{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

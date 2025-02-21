@@ -1,0 +1,235 @@
+<div class="customer-form">
+    <form [formGroup]="customerForm" (ngSubmit)="onSubmit()" class="needs-validation">
+        <!-- Temel Bilgiler -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person me-2"></i>
+                    Temel Bilgiler
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Müşteri No -->
+                    <div class="col-md-6 mb-3">
+                        <label for="customerNumber" class="form-label">Müşteri No*</label>
+                        <input type="text" class="form-control" id="customerNumber" formControlName="customerNumber"
+                            [ngClass]="{'is-invalid': customerForm.get('customerNumber')?.invalid && customerForm.get('customerNumber')?.touched}">
+                        <div class="invalid-feedback">
+                            Geçerli bir müşteri numarası giriniz (Sadece büyük harf ve rakam).
+                        </div>
+                    </div>
+
+                    <!-- Müşteri Tipi -->
+                    <div class="col-md-6 mb-3">
+                        <label for="leadType" class="form-label">Müşteri Tipi*</label>
+                        <select class="form-select" id="leadType" formControlName="leadType"
+                            (change)="onLeadTypeChange()">
+                            @for (type of leadTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Ad Soyad -->
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Ad Soyad*</label>
+                        <input type="text" class="form-control" id="name" formControlName="name"
+                            [ngClass]="{'is-invalid': customerForm.get('name')?.invalid && customerForm.get('name')?.touched}">
+                        <div class="invalid-feedback">
+                            Ad soyad en az 3 karakter olmalıdır.
+                        </div>
+                    </div>
+
+                    <!-- Firma -->
+                    <div class="col-md-6 mb-3">
+                        <label for="company" class="form-label">
+                            Firma
+                            @if (customerForm.get('leadType')?.value === 'Kurumsal') {
+                            <span class="text-danger">*</span>
+                            }
+                        </label>
+                        <input type="text" class="form-control" id="company" formControlName="company"
+                            [ngClass]="{'is-invalid': customerForm.get('company')?.invalid && customerForm.get('company')?.touched}">
+                        <div class="invalid-feedback">
+                            Kurumsal müşteriler için firma adı zorunludur.
+                        </div>
+                    </div>
+
+                    <!-- Vergi No -->
+                    <div class="col-md-6 mb-3">
+                        <label for="taxNumber" class="form-label">
+                            Vergi No
+                            @if (customerForm.get('leadType')?.value === 'Kurumsal') {
+                            <span class="text-danger">*</span>
+                            }
+                        </label>
+                        <input type="text" class="form-control" id="taxNumber" formControlName="taxNumber"
+                            [ngClass]="{'is-invalid': customerForm.get('taxNumber')?.invalid && customerForm.get('taxNumber')?.touched}">
+                        <div class="invalid-feedback">
+                            Geçerli bir vergi numarası giriniz (10 haneli).
+                        </div>
+                    </div>
+
+                    <!-- Vergi Dairesi -->
+                    <div class="col-md-6 mb-3">
+                        <label for="taxOffice" class="form-label">
+                            Vergi Dairesi
+                            @if (customerForm.get('leadType')?.value === 'Kurumsal') {
+                            <span class="text-danger">*</span>
+                            }
+                        </label>
+                        <input type="text" class="form-control" id="taxOffice" formControlName="taxOffice"
+                            [ngClass]="{'is-invalid': customerForm.get('taxOffice')?.invalid && customerForm.get('taxOffice')?.touched}">
+                        <div class="invalid-feedback">
+                            Vergi dairesi giriniz.
+                        </div>
+                    </div>
+
+                    <!-- Durum -->
+                    <div class="col-md-6 mb-3">
+                        <label for="status" class="form-label">Durum*</label>
+                        <select class="form-select" id="status" formControlName="status">
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Açıklama -->
+                    <div class="col-12 mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" formControlName="description"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İletişim Bilgileri -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-telephone me-2"></i>
+                    İletişim Bilgileri
+                </h5>
+                <button type="button" class="btn btn-sm btn-primary" (click)="addContact()">
+                    <i class="bi bi-plus-lg me-2"></i>
+                    Yeni İletişim
+                </button>
+            </div>
+            <div class="card-body">
+                <div formArrayName="contacts">
+                    @for (contact of contacts.controls; track $index) {
+                    <div [formGroupName]="$index" class="contact-item">
+                        <div class="row align-items-end">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Tür*</label>
+                                <select class="form-select" formControlName="type">
+                                    @for (type of contactTypes; track type) {
+                                    <option [value]="type">{{ type }}</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Değer*</label>
+                                <input type="text" class="form-control" formControlName="value">
+                            </div>
+                            <div class="col-md-3 mb-3 d-flex align-items-center">
+                                <div class="form-check me-3">
+                                    <input type="checkbox" class="form-check-input" [id]="'isPrimaryContact' + $index"
+                                        formControlName="isPrimary" (change)="setPrimaryContact($index)">
+                                    <label class="form-check-label" [for]="'isPrimaryContact' + $index">Birincil</label>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                    (click)="removeContact($index)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Adres Bilgileri -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Adres Bilgileri
+                </h5>
+                <button type="button" class="btn btn-sm btn-primary" (click)="addAddress()">
+                    <i class="bi bi-plus-lg me-2"></i>
+                    Yeni Adres
+                </button>
+            </div>
+            <div class="card-body">
+                <div formArrayName="addresses">
+                    @for (address of addresses.controls; track $index) {
+                    <div [formGroupName]="$index" class="address-item">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Tür*</label>
+                                <select class="form-select" formControlName="type">
+                                    @for (type of addressTypes; track type) {
+                                    <option [value]="type">{{ type }}</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Ülke*</label>
+                                <input type="text" class="form-control" formControlName="country">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Şehir*</label>
+                                <input type="text" class="form-control" formControlName="city">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">İlçe*</label>
+                                <input type="text" class="form-control" formControlName="district">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Adres*</label>
+                                <textarea class="form-control" formControlName="address" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Posta Kodu*</label>
+                                <input type="text" class="form-control" formControlName="postalCode"
+                                    [ngClass]="{'is-invalid': address.get('postalCode')?.invalid && address.get('postalCode')?.touched}">
+                                <div class="invalid-feedback">
+                                    Geçerli bir posta kodu giriniz (5 haneli).
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3 d-flex align-items-end">
+                                <div class="form-check me-3">
+                                    <input type="checkbox" class="form-check-input" [id]="'isPrimaryAddress' + $index"
+                                        formControlName="isPrimary" (change)="setPrimaryAddress($index)">
+                                    <label class="form-check-label" [for]="'isPrimaryAddress' + $index">Birincil</label>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                    (click)="removeAddress($index)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Butonları -->
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" routerLink="/customers">
+                <i class="bi bi-x-lg me-2"></i>
+                İptal
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="customerForm.invalid">
+                <i class="bi bi-check-lg me-2"></i>
+                {{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+            </button>
+        </div>
+    </form>
+</div>

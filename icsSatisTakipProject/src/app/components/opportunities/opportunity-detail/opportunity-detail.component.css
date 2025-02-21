@@ -1,0 +1,168 @@
+.opportunity-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Tanım Listesi Stilleri */
+dl.row {
+  margin-bottom: 0;
+}
+
+dt {
+  font-weight: 500;
+  color: #adb5bd;
+}
+
+dd {
+  margin-bottom: 0.5rem;
+}
+
+/* Badge Stilleri */
+.badge {
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+}
+
+/* Timeline Stilleri */
+.timeline {
+  position: relative;
+  padding: 1rem 0;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #495057;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 1rem 1rem 1rem 3rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.timeline-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.timeline-icon {
+  position: absolute;
+  left: 0;
+  top: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #343a40;
+  border: 2px solid #0d6efd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-icon i {
+  color: #0d6efd;
+  font-size: 1rem;
+}
+
+.timeline-content {
+  background-color: #2b3035;
+  padding: 1rem;
+  border-radius: 0.25rem;
+}
+
+.timeline-content h6 {
+  margin-bottom: 0.5rem;
+}
+
+.timeline-content p {
+  color: #adb5bd;
+  margin-bottom: 0.5rem;
+}
+
+/* Buton Stilleri */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 768px) {
+  .opportunity-detail {
+    padding: 1rem;
+  }
+
+  .timeline::before {
+    left: 0.75rem;
+  }
+
+  .timeline-item {
+    padding-left: 2.5rem;
+  }
+
+  .timeline-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .timeline-icon i {
+    font-size: 0.875rem;
+  }
+
+  dl.row {
+    display: block;
+  }
+
+  dt {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 0.25rem;
+  }
+
+  dd {
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 1rem;
+  }
+}

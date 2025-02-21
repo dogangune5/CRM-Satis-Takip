@@ -1,0 +1,174 @@
+<div class="order-form">
+    <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="needs-validation">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cart me-2"></i>
+                    {{ isEditMode ? 'Sipariş Düzenle' : 'Yeni Sipariş' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Temel Bilgiler -->
+                    <div class="col-md-4">
+                        <label for="orderNumber" class="form-label">Sipariş No*</label>
+                        <input type="text" class="form-control" id="orderNumber" formControlName="orderNumber"
+                            [ngClass]="{'is-invalid': isFieldInvalid('orderNumber')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('orderNumber') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Durum*</label>
+                        <select class="form-select" id="status" formControlName="status"
+                            [ngClass]="{'is-invalid': isFieldInvalid('status')}">
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('status') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="orderDate" class="form-label">Sipariş Tarihi*</label>
+                        <input type="date" class="form-control" id="orderDate" formControlName="orderDate"
+                            [ngClass]="{'is-invalid': isFieldInvalid('orderDate')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('orderDate') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="title" class="form-label">Başlık*</label>
+                        <input type="text" class="form-control" id="title" formControlName="title"
+                            [ngClass]="{'is-invalid': isFieldInvalid('title')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('title') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" formControlName="description"
+                            rows="2"></textarea>
+                    </div>
+
+                    <!-- Sipariş Kalemleri -->
+                    <div class="col-12">
+                        <div class="card bg-secondary">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Sipariş Kalemleri</h6>
+                                <button type="button" class="btn btn-sm btn-primary" (click)="addItem()">
+                                    <i class="bi bi-plus-lg me-2"></i>Yeni Kalem
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div formArrayName="items">
+                                    @for (item of items.controls; track $index) {
+                                    <div [formGroupName]="$index" class="item-form mb-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-2">
+                                                <label class="form-label">Tür*</label>
+                                                <select class="form-select" formControlName="type">
+                                                    @for (type of itemTypes; track type) {
+                                                    <option [value]="type">{{ type }}</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Ad*</label>
+                                                <input type="text" class="form-control" formControlName="name">
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Açıklama</label>
+                                                <input type="text" class="form-control" formControlName="description">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Miktar*</label>
+                                                <input type="number" class="form-control" formControlName="quantity">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Birim Fiyat*</label>
+                                                <input type="number" class="form-control" formControlName="unitPrice">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">KDV (%)*</label>
+                                                <input type="number" class="form-control" formControlName="tax">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">İndirim (%)</label>
+                                                <input type="number" class="form-control" formControlName="discount">
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label">Toplam</label>
+                                                <input type="number" class="form-control" formControlName="total"
+                                                    readonly>
+                                            </div>
+
+                                            <div class="col-md-1 d-flex align-items-end">
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    (click)="removeItem($index)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Adres Bilgileri -->
+                    <div class="col-md-6">
+                        <label for="shippingAddress" class="form-label">Teslimat Adresi*</label>
+                        <textarea class="form-control" id="shippingAddress" formControlName="shippingAddress" rows="3"
+                            [ngClass]="{'is-invalid': isFieldInvalid('shippingAddress')}"></textarea>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('shippingAddress') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="billingAddress" class="form-label">Fatura Adresi*</label>
+                        <textarea class="form-control" id="billingAddress" formControlName="billingAddress" rows="3"
+                            [ngClass]="{'is-invalid': isFieldInvalid('billingAddress')}"></textarea>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('billingAddress') }}
+                        </div>
+                    </div>
+
+                    <!-- Notlar -->
+                    <div class="col-md-12">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control" id="notes" formControlName="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                            <i class="bi bi-x-lg me-2"></i>İptal
+                        </button>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary" [disabled]="orderForm.invalid">
+                            <i class="bi bi-check-lg me-2"></i>{{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

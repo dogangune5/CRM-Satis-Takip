@@ -1,0 +1,149 @@
+<div class="customer-detail">
+    <!-- Üst Bilgi Kartı -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-person-vcard me-2"></i>
+                Müşteri Detayı
+            </h5>
+            <button class="btn btn-primary" (click)="editCustomer()">
+                <i class="bi bi-pencil me-2"></i>
+                Düzenle
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Müşteri No:</dt>
+                        <dd class="col-sm-8">{{ customer.customerNumber }}</dd>
+
+                        <dt class="col-sm-4">Ad Soyad:</dt>
+                        <dd class="col-sm-8">{{ customer.name }}</dd>
+
+                        <dt class="col-sm-4">Firma:</dt>
+                        <dd class="col-sm-8">{{ customer.company }}</dd>
+
+                        <dt class="col-sm-4">Vergi No:</dt>
+                        <dd class="col-sm-8">{{ customer.taxNumber }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Müşteri Tipi:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge"
+                                [ngClass]="{'bg-info': customer.leadType === 'Kurumsal', 'bg-success': customer.leadType === 'Bireysel'}">
+                                {{ customer.leadType }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Durum:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge"
+                                [ngClass]="{'bg-success': customer.status === 'Aktif', 'bg-danger': customer.status === 'Pasif', 'bg-warning': customer.status === 'Potansiyel'}">
+                                {{ customer.status }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Vergi Dairesi:</dt>
+                        <dd class="col-sm-8">{{ customer.taxOffice }}</dd>
+
+                        <dt class="col-sm-4">Kayıt Tarihi:</dt>
+                        <dd class="col-sm-8">{{ customer.createdAt | date:'dd.MM.yyyy' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İletişim ve Adres Bilgileri -->
+    <div class="row mb-4">
+        <!-- İletişim Bilgileri -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-telephone me-2"></i>İletişim Bilgileri</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @for (contact of customer.contacts; track contact.id) {
+                        <li class="list-group-item">
+                            <i [class]="getContactIcon(contact.type)" class="me-2"></i>
+                            {{ contact.value }}
+                            @if (contact.isPrimary) {
+                            <span class="badge bg-primary ms-2">Birincil</span>
+                            }
+                        </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adres Bilgileri -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Adres Bilgileri</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @for (address of customer.addresses; track address.id) {
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ address.type }}</h6>
+                                    <p class="mb-1">{{ address.address }}</p>
+                                    <small class="text-muted">
+                                        {{ address.district }}, {{ address.city }}, {{ address.country }} {{
+                                        address.postalCode }}
+                                    </small>
+                                </div>
+                                @if (address.isPrimary) {
+                                <span class="badge bg-primary">Birincil</span>
+                                }
+                            </div>
+                        </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktiviteler -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-activity me-2"></i>
+                Aktiviteler
+            </h6>
+            <button class="btn btn-sm btn-primary" (click)="addActivity()">
+                <i class="bi bi-plus-lg me-2"></i>
+                Yeni Aktivite
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="timeline">
+                @for (activity of activities; track activity.id) {
+                <div class="timeline-item" (click)="viewActivity(activity.id)">
+                    <div class="timeline-icon">
+                        <i [class]="getActivityIcon(activity.type)"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-1">{{ activity.title }}</h6>
+                            <span class="badge" [ngClass]="getActivityStatusClass(activity.status)">
+                                {{ activity.status }}
+                            </span>
+                        </div>
+                        <p class="mb-1">{{ activity.description }}</p>
+                        <small class="text-muted">{{ activity.date | date:'dd.MM.yyyy HH:mm' }}</small>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

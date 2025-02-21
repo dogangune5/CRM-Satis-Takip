@@ -1,0 +1,149 @@
+<div class="proposal-list">
+    <!-- Filtre ve Arama Alanı -->
+    <div class="card bg-dark text-light border-secondary mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary">
+                            <i class="bi bi-search text-light"></i>
+                        </span>
+                        <input type="text" class="form-control bg-dark border-secondary text-light"
+                            placeholder="Teklif Ara..." [(ngModel)]="filter.searchTerm" (ngModelChange)="onSearch()">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex gap-2">
+                        <select class="form-select bg-dark text-light border-secondary" [(ngModel)]="filter.status"
+                            (ngModelChange)="onFilterChange()">
+                            <option [ngValue]="undefined">Tüm Durumlar</option>
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <button class="btn btn-primary" (click)="addProposal()">
+                            <i class="bi bi-plus-lg me-2"></i>Yeni Teklif
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teklif Listesi -->
+    <div class="card bg-dark text-light border-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th (click)="onSort('proposalNumber')" style="cursor: pointer">
+                                Teklif No
+                                <i class="bi" [ngClass]="getSortIcon('proposalNumber')"></i>
+                            </th>
+                            <th (click)="onSort('title')" style="cursor: pointer">
+                                Başlık
+                                <i class="bi" [ngClass]="getSortIcon('title')"></i>
+                            </th>
+                            <th (click)="onSort('status')" style="cursor: pointer">
+                                Durum
+                                <i class="bi" [ngClass]="getSortIcon('status')"></i>
+                            </th>
+                            <th (click)="onSort('validUntil')" style="cursor: pointer">
+                                Geçerlilik
+                                <i class="bi" [ngClass]="getSortIcon('validUntil')"></i>
+                            </th>
+                            <th (click)="onSort('grandTotal')" style="cursor: pointer">
+                                Toplam Tutar
+                                <i class="bi" [ngClass]="getSortIcon('grandTotal')"></i>
+                            </th>
+                            <th (click)="onSort('createdAt')" style="cursor: pointer">
+                                Oluşturma
+                                <i class="bi" [ngClass]="getSortIcon('createdAt')"></i>
+                            </th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (proposal of filteredProposals; track proposal.id) {
+                        <tr>
+                            <td>{{ proposal.proposalNumber }}</td>
+                            <td>
+                                <div>
+                                    {{ proposal.title }}
+                                    <small class="text-muted d-block">{{ proposal.description }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" [ngClass]="getStatusBadgeClass(proposal.status)">
+                                    {{ proposal.status }}
+                                </span>
+                            </td>
+                            <td>{{ proposal.validUntil | date:'dd.MM.yyyy' }}</td>
+                            <td>₺{{ proposal.grandTotal | number }}</td>
+                            <td>{{ proposal.createdAt | date:'dd.MM.yyyy' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" (click)="viewProposal(proposal)"
+                                        title="Görüntüle">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" (click)="editProposal(proposal)"
+                                        title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" (click)="deleteProposal(proposal)"
+                                        title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                        @if (filteredProposals.length === 0) {
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Kayıt bulunamadı
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Sayfalama -->
+        <div class="card-footer bg-dark border-secondary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Toplam {{ pagination.totalItems }} kayıttan {{ startItem }}-{{ endItem }} arası gösteriliyor
+                </div>
+                @if (pagination.totalPages > 1) {
+                <nav>
+                    <ul class="pagination mb-0">
+                        <li class="page-item" [class.disabled]="pagination.currentPage === 1">
+                            <a class="page-link bg-dark border-secondary" href="#"
+                                (click)="onPageChange(pagination.currentPage - 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        @for (page of [].constructor(pagination.totalPages); track $index) {
+                        <li class="page-item" [class.active]="pagination.currentPage === $index + 1">
+                            <a class="page-link bg-dark border-secondary" href="#" (click)="onPageChange($index + 1)">
+                                {{ $index + 1 }}
+                            </a>
+                        </li>
+                        }
+                        <li class="page-item" [class.disabled]="pagination.currentPage === pagination.totalPages">
+                            <a class="page-link bg-dark border-secondary" href="#"
+                                (click)="onPageChange(pagination.currentPage + 1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                }
+            </div>
+        </div>
+    </div>
+</div>

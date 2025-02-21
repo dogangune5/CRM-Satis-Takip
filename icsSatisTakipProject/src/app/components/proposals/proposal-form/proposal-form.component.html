@@ -1,0 +1,160 @@
+<div class="proposal-form">
+    <form [formGroup]="proposalForm" (ngSubmit)="onSubmit()" class="needs-validation">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    {{ isEditMode ? 'Teklif Düzenle' : 'Yeni Teklif' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Temel Bilgiler -->
+                    <div class="col-md-4">
+                        <label for="proposalNumber" class="form-label">Teklif No*</label>
+                        <input type="text" class="form-control" id="proposalNumber" formControlName="proposalNumber"
+                            [ngClass]="{'is-invalid': isFieldInvalid('proposalNumber')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('proposalNumber') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Durum*</label>
+                        <select class="form-select" id="status" formControlName="status"
+                            [ngClass]="{'is-invalid': isFieldInvalid('status')}">
+                            @for (status of statuses; track status) {
+                            <option [value]="status">{{ status }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('status') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="validUntil" class="form-label">Geçerlilik Tarihi*</label>
+                        <input type="date" class="form-control" id="validUntil" formControlName="validUntil"
+                            [ngClass]="{'is-invalid': isFieldInvalid('validUntil')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('validUntil') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="title" class="form-label">Başlık*</label>
+                        <input type="text" class="form-control" id="title" formControlName="title"
+                            [ngClass]="{'is-invalid': isFieldInvalid('title')}">
+                        <div class="invalid-feedback">
+                            {{ getErrorMessage('title') }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" formControlName="description"
+                            rows="2"></textarea>
+                    </div>
+
+                    <!-- Teklif Kalemleri -->
+                    <div class="col-12">
+                        <div class="card bg-secondary">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Teklif Kalemleri</h6>
+                                <button type="button" class="btn btn-sm btn-primary" (click)="addItem()">
+                                    <i class="bi bi-plus-lg me-2"></i>Yeni Kalem
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div formArrayName="items">
+                                    @for (item of items.controls; track $index) {
+                                    <div [formGroupName]="$index" class="item-form mb-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-2">
+                                                <label class="form-label">Tür*</label>
+                                                <select class="form-select" formControlName="type">
+                                                    @for (type of itemTypes; track type) {
+                                                    <option [value]="type">{{ type }}</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Ad*</label>
+                                                <input type="text" class="form-control" formControlName="name">
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Açıklama</label>
+                                                <input type="text" class="form-control" formControlName="description">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Miktar*</label>
+                                                <input type="number" class="form-control" formControlName="quantity">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">Birim Fiyat*</label>
+                                                <input type="number" class="form-control" formControlName="unitPrice">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">KDV (%)*</label>
+                                                <input type="number" class="form-control" formControlName="tax">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label class="form-label">İndirim (%)</label>
+                                                <input type="number" class="form-control" formControlName="discount">
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label class="form-label">Toplam</label>
+                                                <input type="number" class="form-control" formControlName="total"
+                                                    readonly>
+                                            </div>
+
+                                            <div class="col-md-1 d-flex align-items-end">
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    (click)="removeItem($index)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Şartlar ve Notlar -->
+                    <div class="col-md-6">
+                        <label for="terms" class="form-label">Şartlar</label>
+                        <textarea class="form-control" id="terms" formControlName="terms" rows="3"></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="notes" class="form-label">Notlar</label>
+                        <textarea class="form-control" id="notes" formControlName="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                            <i class="bi bi-x-lg me-2"></i>İptal
+                        </button>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary" [disabled]="proposalForm.invalid">
+                            <i class="bi bi-check-lg me-2"></i>{{ isEditMode ? 'Güncelle' : 'Kaydet' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,152 +1,289 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import {
-  Proposal,
-  ProposalStatus,
-  ProposalItem,
-} from '../../../interfaces/proposal.interface';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Proposal } from '../../../models/database.types';
+import { ProposalService } from '../../../services/proposal.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-proposal-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: 'proposal-detail.component.html',
-  styleUrls: ['proposal-detail.component.css'],
+  imports: [CommonModule],
+  template: `
+    <div class="container mt-4">
+      @if (isLoading) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+      </div>
+      } @else if (error) {
+      <div class="alert alert-danger" role="alert">
+        {{ error }}
+        <button class="btn btn-link" (click)="goBack()">Geri Dön</button>
+      </div>
+      } @else if (proposal) {
+      <div class="card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h3 class="mb-0">Teklif Detayı</h3>
+          <div class="btn-group">
+            @if (canEdit(proposal)) {
+            <button class="btn btn-primary" (click)="editProposal()">
+              <i class="bi bi-pencil"></i> Düzenle
+            </button>
+            <button class="btn btn-danger" (click)="deleteProposal()">
+              <i class="bi bi-trash"></i> Sil
+            </button>
+            }
+            <button class="btn btn-secondary" (click)="goBack()">
+              <i class="bi bi-arrow-left"></i> Geri
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h5>Müşteri Bilgileri</h5>
+              <p class="mb-1">
+                <strong>İsim:</strong> {{ proposal.customer?.name }}
+              </p>
+              <p class="mb-1">
+                <strong>E-posta:</strong> {{ proposal.customer?.email || '-' }}
+              </p>
+              <p class="mb-1">
+                <strong>Telefon:</strong> {{ proposal.customer?.phone || '-' }}
+              </p>
+              <p class="mb-1">
+                <strong>Adres:</strong> {{ proposal.customer?.address || '-' }}
+              </p>
+            </div>
+            <div class="col-md-6">
+              <h5>Teklif Bilgileri</h5>
+              <p class="mb-1">
+                <strong>Durum:</strong>
+                <span
+                  class="badge ms-2"
+                  [ngClass]="getStatusClass(proposal.status)"
+                >
+                  {{ getStatusText(proposal.status) }}
+                </span>
+              </p>
+              <p class="mb-1">
+                <strong>Tarih:</strong>
+                {{ proposal.proposal_date | date : 'dd/MM/yyyy' }}
+              </p>
+              <p class="mb-1">
+                <strong>Toplam Tutar:</strong>
+                {{
+                  proposal.total_amount
+                    | currency : 'TRY' : 'symbol-narrow' : '1.2-2'
+                }}
+              </p>
+            </div>
+          </div>
+
+          <h5>Ürünler</h5>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ürün</th>
+                  <th>Miktar</th>
+                  <th>Birim Fiyat</th>
+                  <th>Toplam</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (detail of proposal.details; track detail.id) {
+                <tr>
+                  <td>{{ detail.product?.name }}</td>
+                  <td>{{ detail.quantity }}</td>
+                  <td>
+                    {{
+                      detail.unit_price
+                        | currency : 'TRY' : 'symbol-narrow' : '1.2-2'
+                    }}
+                  </td>
+                  <td>
+                    {{
+                      detail.quantity * detail.unit_price
+                        | currency : 'TRY' : 'symbol-narrow' : '1.2-2'
+                    }}
+                  </td>
+                </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Toplam:</strong></td>
+                  <td>
+                    {{
+                      proposal.total_amount
+                        | currency : 'TRY' : 'symbol-narrow' : '1.2-2'
+                    }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          @if (canEdit(proposal)) {
+          <div class="mt-4">
+            <h5>Durum Güncelle</h5>
+            <div class="btn-group">
+              @for (status of availableStatuses; track status) {
+              <button
+                class="btn"
+                [class.btn-outline-secondary]="proposal.status !== status"
+                [class.btn-secondary]="proposal.status === status"
+                (click)="updateStatus(status)"
+                [disabled]="isUpdating"
+              >
+                {{ getStatusText(status) }}
+              </button>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  `,
+  styles: [
+    `
+      .btn-group {
+        gap: 0.25rem;
+      }
+      .badge {
+        padding: 0.5em 0.75em;
+      }
+    `,
+  ],
 })
 export class ProposalDetailComponent implements OnInit {
-  proposal: Proposal = {
-    id: 1,
-    proposalNumber: 'TEK-2024-001',
-    customerId: 1,
-    opportunityId: 1,
-    title: 'E-ticaret Sistemi Teklifi',
-    description: 'B2B E-ticaret platformu geliştirme projesi için teklif',
-    status: 'Görüşülüyor',
-    validUntil: new Date('2024-06-30'),
-    items: [
-      {
-        id: 1,
-        proposalId: 1,
-        type: 'Proje',
-        name: 'E-ticaret Yazılımı',
-        description: 'Özel geliştirme B2B e-ticaret platformu',
-        quantity: 1,
-        unitPrice: 150000,
-        tax: 20,
-        discount: 10,
-        total: 162000,
-      },
-      {
-        id: 2,
-        proposalId: 1,
-        type: 'Hizmet',
-        name: 'Kurulum ve Eğitim',
-        description: 'Sistem kurulumu ve kullanıcı eğitimi',
-        quantity: 1,
-        unitPrice: 15000,
-        tax: 20,
-        total: 18000,
-      },
-    ],
-    subTotal: 165000,
-    taxTotal: 33000,
-    discountTotal: 15000,
-    grandTotal: 183000,
-    terms:
-      '1. Ödeme: %40 peşin, %30 geliştirme sürecinde, %30 teslimde\n2. Geliştirme süresi: 3 ay\n3. 1 yıl ücretsiz destek',
-    notes: 'Müşteri ile ilk görüşme yapıldı, teknik detaylar netleştirildi.',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdBy: 1,
-    updatedBy: 1,
-  };
-
-  activities = [
-    {
-      id: 1,
-      type: 'Oluşturma',
-      title: 'Teklif Oluşturuldu',
-      description: 'Teklif taslağı hazırlandı',
-      date: new Date(),
-      status: 'Tamamlandı',
-    },
-    {
-      id: 2,
-      type: 'Gönderim',
-      title: 'Teklif Gönderildi',
-      description: 'Müşteriye e-posta ile iletildi',
-      date: new Date(Date.now() - 86400000), // 1 gün önce
-      status: 'Tamamlandı',
-    },
+  proposal: any = null;
+  isLoading = false;
+  isUpdating = false;
+  error: string | null = null;
+  availableStatuses: Proposal['status'][] = [
+    'draft',
+    'pending',
+    'accepted',
+    'rejected',
   ];
 
-  constructor() {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private proposalService: ProposalService,
+    private authService: AuthService
+  ) {}
 
-  ngOnInit(): void {}
+  async ngOnInit(): Promise<void> {
+    const proposalId = this.route.snapshot.paramMap.get('id');
+    if (!proposalId) {
+      this.error = 'Teklif ID bulunamadı.';
+      return;
+    }
 
-  // Durum badge sınıfı
-  getStatusBadgeClass(status: ProposalStatus): string {
+    await this.loadProposal(proposalId);
+  }
+
+  private async loadProposal(id: string): Promise<void> {
+    try {
+      this.isLoading = true;
+      this.error = null;
+      this.proposal = await this.proposalService.getProposalWithDetails(id);
+    } catch (error) {
+      console.error('Error loading proposal:', error);
+      this.error = 'Teklif yüklenirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getStatusClass(status: string): string {
     switch (status) {
-      case 'Taslak':
+      case 'draft':
         return 'bg-secondary';
-      case 'Gönderildi':
-        return 'bg-primary';
-      case 'Görüşülüyor':
-        return 'bg-info';
-      case 'Revize Edildi':
+      case 'pending':
         return 'bg-warning';
-      case 'Onaylandı':
+      case 'accepted':
         return 'bg-success';
-      case 'Reddedildi':
+      case 'rejected':
         return 'bg-danger';
       default:
         return 'bg-secondary';
     }
   }
 
-  // Aktivite ikonu
-  getActivityIcon(type: string): string {
-    switch (type) {
-      case 'Oluşturma':
-        return 'bi bi-plus-circle';
-      case 'Gönderim':
-        return 'bi bi-send';
-      case 'Revizyon':
-        return 'bi bi-pencil';
-      case 'Onay':
-        return 'bi bi-check-circle';
-      case 'Red':
-        return 'bi bi-x-circle';
-      default:
-        return 'bi bi-circle';
-    }
-  }
-
-  // Aktivite durum badge sınıfı
-  getActivityStatusClass(status: string): string {
+  getStatusText(status: string): string {
     switch (status) {
-      case 'Tamamlandı':
-        return 'bg-success';
-      case 'Beklemede':
-        return 'bg-warning';
+      case 'draft':
+        return 'Taslak';
+      case 'pending':
+        return 'Beklemede';
+      case 'accepted':
+        return 'Onaylandı';
+      case 'rejected':
+        return 'Reddedildi';
       default:
-        return 'bg-secondary';
+        return status;
     }
   }
 
-  // Teklif düzenleme
+  canEdit(proposal: Proposal): boolean {
+    if (this.authService.isAdmin()) return true;
+    return proposal.created_by === this.authService.getCurrentUserId();
+  }
+
+  async updateStatus(status: Proposal['status']): Promise<void> {
+    if (!this.proposal || this.isUpdating) return;
+
+    try {
+      this.isUpdating = true;
+      this.error = null;
+      await this.proposalService.updateProposalStatus(this.proposal.id, status);
+      await this.loadProposal(this.proposal.id);
+    } catch (error) {
+      console.error('Error updating proposal status:', error);
+      this.error = 'Teklif durumu güncellenirken bir hata oluştu.';
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
   editProposal(): void {
-    // Düzenleme sayfasına yönlendir
+    if (this.proposal) {
+      this.router.navigate(['/proposals', this.proposal.id, 'edit']);
+    }
   }
 
-  // Yeni aktivite ekleme
-  addActivity(): void {
-    // Aktivite ekleme modalını göster
+  async deleteProposal(): Promise<void> {
+    if (
+      !this.proposal ||
+      !confirm('Bu teklifi silmek istediğinizden emin misiniz?')
+    ) {
+      return;
+    }
+
+    try {
+      this.isLoading = true;
+      this.error = null;
+      await this.proposalService.delete(this.proposal.id);
+      await this.router.navigate(['/proposals']);
+    } catch (error) {
+      console.error('Error deleting proposal:', error);
+      this.error = 'Teklif silinirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  // Aktivite detayı görüntüleme
-  viewActivity(activityId: number): void {
-    // Aktivite detay modalını göster
+  goBack(): void {
+    this.router.navigate(['/proposals']);
   }
 }

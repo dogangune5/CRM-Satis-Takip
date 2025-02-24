@@ -1,115 +1,102 @@
-import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
-import { catchError, delay, map, tap } from 'rxjs/operators';
-import { environment } from '@app/environments/environment';
-import { ApiResponse } from '../interfaces/api-response.interface';
-
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface AuthResponse {
-  token: string;
-  refreshToken: string;
-  user: User;
-}
-
-interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: 'ADMIN' | 'USER';
-}
-
-// Mock kullanıcılar
-const MOCK_USERS = [
-  {
-    id: 1,
-    email: 'admin@example.com',
-    password: 'admin123', // Gerçek uygulamada asla plain text password kullanmayın
-    name: 'Admin User',
-    role: 'ADMIN' as const,
-  },
-  {
-    id: 2,
-    email: 'user@example.com',
-    password: 'user123',
-    name: 'Normal User',
-    role: 'USER' as const,
-  },
-];
+import { BehaviorSubject, Observable } from 'rxjs';
+import { SupabaseService } from './supabase.service';
+import { User } from '../models/database.types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly _user = signal<User | null>(null);
-  readonly user = this._user.asReadonly();
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient, private router: Router) {
-    this.checkAuth();
-  }
-
-  private checkAuth() {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        this._user.set(user);
-      } catch (e) {
-        this.logout();
+  constructor(
+    private supabaseService: SupabaseService,
+    private router: Router
+  ) {
+    this.supabaseService.client.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        this.loadUserProfile();
+      } else {
+        this.currentUserSubject.next(null);
       }
+    });
+  }
+
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      const { data, error } =
+        await this.supabaseService.client.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (error) throw error;
+
+      if (data.user) {
+        await this.loadUserProfile();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
   }
 
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
-    // Mock login işlemi
-    const user = MOCK_USERS.find(
-      (u) =>
-        u.email === credentials.email && u.password === credentials.password
-    );
-
-    if (!user) {
-      return throwError(() => 'Geçersiz kullanıcı adı veya şifre');
+  async logout(): Promise<void> {
+    try {
+      await this.supabaseService.client.auth.signOut();
+      this.currentUserSubject.next(null);
+      await this.router.navigate(['/login']);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-
-    // Kullanıcı bilgilerinden password'ü çıkar
-    const { password, ...userWithoutPassword } = user;
-
-    // Mock token oluştur
-    const mockResponse: AuthResponse = {
-      token: 'mock-jwt-token',
-      refreshToken: 'mock-refresh-token',
-      user: userWithoutPassword,
-    };
-
-    // Gerçek API çağrısını simüle et
-    return of(mockResponse).pipe(
-      delay(500), // 500ms gecikme ekle
-      tap((response) => {
-        localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem(environment.tokenKey, response.token);
-        localStorage.setItem(
-          environment.refreshTokenKey,
-          response.refreshToken
-        );
-        this._user.set(response.user);
-      })
-    );
   }
 
-  logout() {
-    localStorage.removeItem('user');
-    localStorage.removeItem(environment.tokenKey);
-    localStorage.removeItem(environment.refreshTokenKey);
-    this._user.set(null);
-    this.router.navigate(['/login']);
+  private async loadUserProfile(): Promise<void> {
+    try {
+      const {
+        data: { user },
+      } = await this.supabaseService.client.auth.getUser();
+
+      if (user) {
+        const { data: profile, error } = await this.supabaseService.client
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (profile) {
+          this.currentUserSubject.next(profile);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      this.currentUserSubject.next(null);
+    }
   }
 
   isAuthenticated(): boolean {
-    return !!this._user();
+    return !!this.currentUserSubject.value;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUserSubject.value?.role === 'admin';
+  }
+
+  isManager(): boolean {
+    return this.currentUserSubject.value?.role === 'manager';
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  getCurrentUserId(): string | null {
+    return this.currentUserSubject.value?.id || null;
   }
 }

@@ -1,217 +1,191 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
-  FormArray,
   Validators,
 } from '@angular/forms';
-import {
-  Customer,
-  CustomerStatus,
-  LeadType,
-  ContactType,
-} from '../../interfaces/customer.interface';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Customer } from '../../models/database.types';
+import { CustomerService } from '../../services/customer.service';
 
 @Component({
   selector: 'app-customer-form',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './customer-form.component.html',
-  styleUrls: ['./customer-form.component.css'],
+  template: `
+    <div class="container mt-4">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            {{ isEditMode ? 'Müşteri Düzenle' : 'Yeni Müşteri' }}
+          </h3>
+        </div>
+        <div class="card-body">
+          @if (error) {
+          <div class="alert alert-danger mb-4">{{ error }}</div>
+          }
+
+          <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">İsim</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  formControlName="name"
+                  [class.is-invalid]="isFieldInvalid('name')"
+                />
+                @if (isFieldInvalid('name')) {
+                <div class="invalid-feedback">İsim alanı zorunludur</div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">E-posta</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  formControlName="email"
+                  [class.is-invalid]="isFieldInvalid('email')"
+                />
+                @if (isFieldInvalid('email')) {
+                <div class="invalid-feedback">
+                  Geçerli bir e-posta adresi giriniz
+                </div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Telefon</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  formControlName="phone"
+                />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Adres</label>
+                <textarea
+                  class="form-control"
+                  formControlName="address"
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="col-12">
+                <div class="d-flex gap-2">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [disabled]="customerForm.invalid || isLoading"
+                  >
+                    {{ isLoading ? 'Kaydediliyor...' : 'Kaydet' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="onCancel()"
+                    [disabled]="isLoading"
+                  >
+                    İptal
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `,
 })
 export class CustomerFormComponent implements OnInit {
-  @Input() customer?: Customer;
-  @Output() save = new EventEmitter<Customer>();
-  @Output() cancel = new EventEmitter<void>();
-
   customerForm: FormGroup;
   isEditMode = false;
-  leadTypes: LeadType[] = ['Bireysel', 'Kurumsal'];
-  statuses: CustomerStatus[] = ['Aktif', 'Pasif', 'Potansiyel'];
-  contactTypes: ContactType[] = ['Telefon', 'Email', 'Yüz Yüze'];
-  addressTypes = ['İş', 'Ev', 'Fatura'];
+  isLoading = false;
+  error: string | null = null;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private customerService: CustomerService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
     this.customerForm = this.createForm();
   }
 
-  ngOnInit(): void {
-    if (this.customer) {
-      this.customerForm.patchValue(this.customer);
-
-      // İletişim bilgilerini doldur
-      this.customer.contacts.forEach((contact) => {
-        this.addContact(contact);
-      });
-
-      // Adres bilgilerini doldur
-      this.customer.addresses.forEach((address) => {
-        this.addAddress(address);
-      });
+  async ngOnInit(): Promise<void> {
+    const customerId = this.route.snapshot.paramMap.get('id');
+    if (customerId) {
+      this.isEditMode = true;
+      await this.loadCustomer(customerId);
     }
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
-      customerNumber: [
-        '',
-        [Validators.required, Validators.pattern('^[A-Z0-9]+$')],
-      ],
-      leadType: ['Bireysel', Validators.required],
-      name: ['', [Validators.required, Validators.minLength(3)]],
-      company: [''],
-      taxNumber: [''],
-      taxOffice: [''],
-      status: ['Aktif', Validators.required],
-      description: [''],
-      contacts: this.fb.array([]),
-      addresses: this.fb.array([]),
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.email]],
+      phone: [''],
+      address: [''],
     });
   }
 
-  // İletişim bilgileri için form array getter
-  get contacts(): FormArray {
-    return this.customerForm.get('contacts') as FormArray;
-  }
-
-  // Adres bilgileri için form array getter
-  get addresses(): FormArray {
-    return this.customerForm.get('addresses') as FormArray;
-  }
-
-  // Yeni iletişim bilgisi ekle
-  addContact(contact?: any): void {
-    const contactForm = this.fb.group({
-      type: [contact?.type || 'Telefon', Validators.required],
-      value: [contact?.value || '', Validators.required],
-      description: [contact?.description || ''],
-      isPrimary: [contact?.isPrimary || false],
-    });
-
-    this.contacts.push(contactForm);
-  }
-
-  // İletişim bilgisi sil
-  removeContact(index: number): void {
-    this.contacts.removeAt(index);
-  }
-
-  // Yeni adres ekle
-  addAddress(address?: any): void {
-    const addressForm = this.fb.group({
-      type: [address?.type || 'İş', Validators.required],
-      country: [address?.country || 'Türkiye', Validators.required],
-      city: [address?.city || '', Validators.required],
-      district: [address?.district || ''],
-      address: [address?.address || '', Validators.required],
-      postalCode: [
-        address?.postalCode || '',
-        [Validators.required, Validators.pattern('^[0-9]{5}$')],
-      ],
-      isPrimary: [address?.isPrimary || false],
-    });
-
-    this.addresses.push(addressForm);
-  }
-
-  // Adres sil
-  removeAddress(index: number): void {
-    this.addresses.removeAt(index);
-  }
-
-  // Primary iletişim bilgisini güncelle
-  setPrimaryContact(index: number): void {
-    const contacts = this.contacts.controls;
-    contacts.forEach((contact, i) => {
-      contact.get('isPrimary')?.setValue(i === index);
-    });
-  }
-
-  // Primary adresi güncelle
-  setPrimaryAddress(index: number): void {
-    const addresses = this.addresses.controls;
-    addresses.forEach((address, i) => {
-      address.get('isPrimary')?.setValue(i === index);
-    });
-  }
-
-  // Müşteri tipi değiştiğinde
-  onLeadTypeChange(): void {
-    const leadType = this.customerForm.get('leadType')?.value;
-    const companyControl = this.customerForm.get('company');
-    const taxNumberControl = this.customerForm.get('taxNumber');
-    const taxOfficeControl = this.customerForm.get('taxOffice');
-
-    if (leadType === 'Kurumsal') {
-      companyControl?.setValidators([Validators.required]);
-      taxNumberControl?.setValidators([
-        Validators.required,
-        Validators.pattern('^[0-9]{10}$'),
-      ]);
-      taxOfficeControl?.setValidators([Validators.required]);
-    } else {
-      companyControl?.clearValidators();
-      taxNumberControl?.clearValidators();
-      taxOfficeControl?.clearValidators();
-    }
-
-    companyControl?.updateValueAndValidity();
-    taxNumberControl?.updateValueAndValidity();
-    taxOfficeControl?.updateValueAndValidity();
-  }
-
-  // Formu gönder
-  onSubmit(): void {
-    if (this.customerForm.valid) {
-      const formValue = this.customerForm.value;
-
-      // ID ve tarih bilgilerini ekle
-      const customerData: Customer = {
-        ...formValue,
-        id: this.isEditMode ? formValue.id : Date.now(),
-        createdAt: this.isEditMode ? formValue.createdAt : new Date(),
-        updatedAt: new Date(),
-      };
-
-      this.save.emit(customerData);
-      this.customerForm.reset();
-      this.contacts.clear();
-      this.addresses.clear();
-    } else {
-      this.markFormGroupTouched(this.customerForm);
-    }
-  }
-
-  // İptal
-  onCancel(): void {
-    this.cancel.emit();
-  }
-
-  // Form validasyonu için yardımcı metod
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach((control) => {
-      control.markAsTouched();
-
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
+  private async loadCustomer(id: string): Promise<void> {
+    try {
+      this.isLoading = true;
+      this.error = null;
+      const customer = await this.customerService.getById(id);
+      if (customer) {
+        this.customerForm.patchValue(customer);
+      } else {
+        this.error = 'Müşteri bulunamadı.';
       }
-    });
+    } catch (error) {
+      console.error('Error loading customer:', error);
+      this.error = 'Müşteri yüklenirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  // Form kontrolü için yardımcı metodlar
+  async onSubmit(): Promise<void> {
+    if (this.customerForm.invalid || this.isLoading) {
+      return;
+    }
+
+    try {
+      this.isLoading = true;
+      this.error = null;
+
+      const customerData = this.customerForm.value;
+
+      if (this.isEditMode) {
+        const customerId = this.route.snapshot.paramMap.get('id');
+        if (!customerId) throw new Error('Customer ID not found');
+        await this.customerService.update(customerId, customerData);
+      } else {
+        await this.customerService.create(customerData);
+      }
+
+      await this.router.navigate(['/customers']);
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      this.error = 'Müşteri kaydedilirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/customers']);
+  }
+
   isFieldInvalid(fieldName: string): boolean {
     const field = this.customerForm.get(fieldName);
     return field ? field.invalid && (field.dirty || field.touched) : false;
-  }
-
-  getErrorMessage(fieldName: string): string {
-    const field = this.customerForm.get(fieldName);
-    if (field?.hasError('required')) {
-      return 'Bu alan zorunludur';
-    }
-    return '';
   }
 }

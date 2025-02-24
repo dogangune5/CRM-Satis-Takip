@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -8,219 +8,333 @@ import {
   FormArray,
   Validators,
 } from '@angular/forms';
-import {
-  Proposal,
-  ProposalStatus,
-  ProposalItem,
-  ProposalItemType,
-} from '../../../interfaces/proposal.interface';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Proposal } from '../../../models/database.types';
+import { ProposalService } from '../../../services/proposal.service';
+import { CustomerService } from '../../../services/customer.service';
 
 @Component({
   selector: 'app-proposal-form',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './proposal-form.component.html',
-  styleUrls: ['./proposal-form.component.css'],
+  template: `
+    <div class="container mt-4">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            {{ isEditMode ? 'Teklif Düzenle' : 'Yeni Teklif' }}
+          </h3>
+        </div>
+        <div class="card-body">
+          @if (error) {
+          <div class="alert alert-danger mb-4">{{ error }}</div>
+          }
+
+          <form [formGroup]="proposalForm" (ngSubmit)="onSubmit()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Müşteri</label>
+                <select
+                  class="form-select"
+                  formControlName="customer_id"
+                  [class.is-invalid]="isFieldInvalid('customer_id')"
+                >
+                  <option value="">Müşteri Seçin</option>
+                  @for (customer of customers; track customer.id) {
+                  <option [value]="customer.id">{{ customer.name }}</option>
+                  }
+                </select>
+                @if (isFieldInvalid('customer_id')) {
+                <div class="invalid-feedback">Müşteri seçimi zorunludur</div>
+                }
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Teklif Tarihi</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  formControlName="proposal_date"
+                  [class.is-invalid]="isFieldInvalid('proposal_date')"
+                />
+                @if (isFieldInvalid('proposal_date')) {
+                <div class="invalid-feedback">Teklif tarihi zorunludur</div>
+                }
+              </div>
+
+              <div class="col-12">
+                <h5 class="mb-3">Ürünler</h5>
+                <div formArrayName="details">
+                  @for (detail of details.controls; track $index) {
+                  <div [formGroupName]="$index" class="row g-3 mb-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Ürün</label>
+                      <select
+                        class="form-select"
+                        formControlName="product_id"
+                        [class.is-invalid]="
+                          isDetailFieldInvalid($index, 'product_id')
+                        "
+                      >
+                        <option value="">Ürün Seçin</option>
+                        @for (product of products; track product.id) {
+                        <option [value]="product.id">
+                          {{ product.name }} -
+                          {{
+                            product.price
+                              | currency : 'TRY' : 'symbol-narrow' : '1.2-2'
+                          }}
+                        </option>
+                        }
+                      </select>
+                    </div>
+
+                    <div class="col-md-3">
+                      <label class="form-label">Miktar</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        formControlName="quantity"
+                        min="1"
+                        [class.is-invalid]="
+                          isDetailFieldInvalid($index, 'quantity')
+                        "
+                      />
+                    </div>
+
+                    <div class="col-md-3">
+                      <label class="form-label">Birim Fiyat</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        formControlName="unit_price"
+                        min="0"
+                        step="0.01"
+                        [class.is-invalid]="
+                          isDetailFieldInvalid($index, 'unit_price')
+                        "
+                      />
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        (click)="removeDetail($index)"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  }
+
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    (click)="addDetail()"
+                  >
+                    <i class="bi bi-plus"></i> Ürün Ekle
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="d-flex gap-2">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [disabled]="proposalForm.invalid || isLoading"
+                  >
+                    {{ isLoading ? 'Kaydediliyor...' : 'Kaydet' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="onCancel()"
+                    [disabled]="isLoading"
+                  >
+                    İptal
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `,
 })
 export class ProposalFormComponent implements OnInit {
-  @Input() proposal?: Proposal;
-  @Output() save = new EventEmitter<Proposal>();
-  @Output() cancel = new EventEmitter<void>();
-
   proposalForm: FormGroup;
   isEditMode = false;
-  statuses: ProposalStatus[] = [
-    'Taslak',
-    'Gönderildi',
-    'Görüşülüyor',
-    'Revize Edildi',
-    'Onaylandı',
-    'Reddedildi',
-  ];
-  itemTypes: ProposalItemType[] = ['Ürün', 'Hizmet', 'Proje'];
+  isLoading = false;
+  error: string | null = null;
+  customers: any[] = [];
+  products: any[] = [];
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private proposalService: ProposalService,
+    private customerService: CustomerService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
     this.proposalForm = this.createForm();
   }
 
-  ngOnInit(): void {
-    if (this.proposal) {
+  async ngOnInit(): Promise<void> {
+    await this.loadCustomers();
+    await this.loadProducts();
+
+    const proposalId = this.route.snapshot.paramMap.get('id');
+    if (proposalId) {
       this.isEditMode = true;
-      this.proposalForm.patchValue(this.proposal);
-      this.proposal.items.forEach((item) => this.addItem(item));
-    } else {
-      this.addItem();
+      await this.loadProposal(proposalId);
     }
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
-      proposalNumber: [
-        '',
-        [Validators.required, Validators.pattern('^TEK-[0-9]{4}-[0-9]{3}$')],
+      customer_id: ['', Validators.required],
+      proposal_date: [
+        new Date().toISOString().split('T')[0],
+        Validators.required,
       ],
-      title: ['', [Validators.required, Validators.minLength(3)]],
-      description: [''],
-      status: ['Taslak', Validators.required],
-      validUntil: ['', Validators.required],
-      items: this.fb.array([]),
-      terms: [''],
-      notes: [''],
+      details: this.fb.array([]),
     });
   }
 
-  // Form dizileri için getter'lar
-  get items(): FormArray {
-    return this.proposalForm.get('items') as FormArray;
+  get details(): FormArray {
+    return this.proposalForm.get('details') as FormArray;
   }
 
-  // Yeni kalem ekle
-  addItem(item?: ProposalItem): void {
-    const itemForm = this.fb.group({
-      type: [item?.type || 'Ürün', Validators.required],
-      name: [item?.name || '', Validators.required],
-      description: [item?.description || ''],
-      quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
-      unitPrice: [
-        item?.unitPrice || 0,
-        [Validators.required, Validators.min(0)],
-      ],
-      tax: [item?.tax || 18, [Validators.required, Validators.min(0)]],
-      discount: [item?.discount || 0, [Validators.min(0), Validators.max(100)]],
-      total: [{ value: item?.total || 0, disabled: true }],
+  private createDetailForm(): FormGroup {
+    return this.fb.group({
+      product_id: ['', Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unit_price: [0, [Validators.required, Validators.min(0)]],
     });
-
-    itemForm.valueChanges.subscribe(() => {
-      this.calculateItemTotal(itemForm);
-      this.calculateTotals();
-    });
-
-    this.items.push(itemForm);
-    this.calculateTotals();
   }
 
-  // Kalem sil
-  removeItem(index: number): void {
-    this.items.removeAt(index);
-    this.calculateTotals();
+  addDetail(): void {
+    this.details.push(this.createDetailForm());
   }
 
-  // Kalem toplamını hesapla
-  private calculateItemTotal(itemForm: FormGroup): void {
-    const quantity = itemForm.get('quantity')?.value || 0;
-    const unitPrice = itemForm.get('unitPrice')?.value || 0;
-    const tax = itemForm.get('tax')?.value || 0;
-    const discount = itemForm.get('discount')?.value || 0;
-
-    const subtotal = quantity * unitPrice;
-    const discountAmount = (subtotal * discount) / 100;
-    const taxAmount = ((subtotal - discountAmount) * tax) / 100;
-    const total = subtotal - discountAmount + taxAmount;
-
-    itemForm.patchValue({ total: total }, { emitEvent: false });
+  removeDetail(index: number): void {
+    this.details.removeAt(index);
   }
 
-  // Genel toplamları hesapla
-  private calculateTotals(): void {
-    let subTotal = 0;
-    let taxTotal = 0;
-    let discountTotal = 0;
-    let grandTotal = 0;
-
-    this.items.controls.forEach((item) => {
-      const quantity = item.get('quantity')?.value || 0;
-      const unitPrice = item.get('unitPrice')?.value || 0;
-      const tax = item.get('tax')?.value || 0;
-      const discount = item.get('discount')?.value || 0;
-
-      const itemSubtotal = quantity * unitPrice;
-      const itemDiscount = (itemSubtotal * discount) / 100;
-      const itemTax = ((itemSubtotal - itemDiscount) * tax) / 100;
-
-      subTotal += itemSubtotal;
-      taxTotal += itemTax;
-      discountTotal += itemDiscount;
-    });
-
-    grandTotal = subTotal - discountTotal + taxTotal;
-
-    this.proposalForm.patchValue(
-      {
-        subTotal,
-        taxTotal,
-        discountTotal,
-        grandTotal,
-      },
-      { emitEvent: false }
-    );
-  }
-
-  // Form gönderme
-  onSubmit(): void {
-    if (this.proposalForm.valid) {
-      const formValue = this.proposalForm.value;
-      const items = this.items.controls.map((item) => ({
-        ...item.value,
-        total: item.get('total')?.value,
-      }));
-
-      const proposalData: Proposal = {
-        ...formValue,
-        id: this.isEditMode ? this.proposal!.id : Date.now(),
-        customerId: this.isEditMode ? this.proposal!.customerId : 0, // Bu değer servis entegrasyonunda güncellenecek
-        items: items,
-        createdAt: this.isEditMode ? this.proposal!.createdAt : new Date(),
-        updatedAt: new Date(),
-        createdBy: this.isEditMode ? this.proposal!.createdBy : 1, // Bu değer auth servisinden alınacak
-        updatedBy: 1, // Bu değer auth servisinden alınacak
-      };
-
-      this.save.emit(proposalData);
-    } else {
-      this.markFormGroupTouched(this.proposalForm);
+  private async loadCustomers(): Promise<void> {
+    try {
+      this.customers = await this.customerService.getAll();
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      this.error = 'Müşteriler yüklenirken bir hata oluştu.';
     }
   }
 
-  // İptal
-  onCancel(): void {
-    this.cancel.emit();
+  private async loadProducts(): Promise<void> {
+    try {
+      // TODO: Implement ProductService and load products
+      this.products = [];
+    } catch (error) {
+      console.error('Error loading products:', error);
+      this.error = 'Ürünler yüklenirken bir hata oluştu.';
+    }
   }
 
-  // Form doğrulama yardımcı metodları
+  private async loadProposal(id: string): Promise<void> {
+    try {
+      this.isLoading = true;
+      this.error = null;
+      const proposal = await this.proposalService.getProposalWithDetails(id);
+
+      if (proposal) {
+        this.proposalForm.patchValue({
+          customer_id: proposal.customer_id,
+          proposal_date: proposal.proposal_date,
+        });
+
+        // Clear existing details
+        while (this.details.length) {
+          this.details.removeAt(0);
+        }
+
+        // Add proposal details
+        proposal.details?.forEach((detail) => {
+          this.details.push(
+            this.fb.group({
+              product_id: [detail.product_id, Validators.required],
+              quantity: [
+                detail.quantity,
+                [Validators.required, Validators.min(1)],
+              ],
+              unit_price: [
+                detail.unit_price,
+                [Validators.required, Validators.min(0)],
+              ],
+            })
+          );
+        });
+      }
+    } catch (error) {
+      console.error('Error loading proposal:', error);
+      this.error = 'Teklif yüklenirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async onSubmit(): Promise<void> {
+    if (this.proposalForm.invalid || this.isLoading) {
+      return;
+    }
+
+    try {
+      this.isLoading = true;
+      this.error = null;
+
+      const formValue = this.proposalForm.value;
+      const total_amount = formValue.details.reduce(
+        (sum: number, detail: any) => sum + detail.quantity * detail.unit_price,
+        0
+      );
+
+      const proposalData = {
+        ...formValue,
+        total_amount,
+        status: this.isEditMode ? undefined : 'draft',
+      };
+
+      if (this.isEditMode) {
+        const proposalId = this.route.snapshot.paramMap.get('id');
+        if (!proposalId) throw new Error('Proposal ID not found');
+        await this.proposalService.update(proposalId, proposalData);
+      } else {
+        await this.proposalService.create(proposalData);
+      }
+
+      await this.router.navigate(['/proposals']);
+    } catch (error) {
+      console.error('Error saving proposal:', error);
+      this.error = 'Teklif kaydedilirken bir hata oluştu.';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/proposals']);
+  }
+
   isFieldInvalid(fieldName: string): boolean {
     const field = this.proposalForm.get(fieldName);
     return field ? field.invalid && (field.dirty || field.touched) : false;
   }
 
-  getErrorMessage(fieldName: string): string {
-    const field = this.proposalForm.get(fieldName);
-    if (!field) return '';
-
-    if (field.hasError('required')) {
-      return 'Bu alan zorunludur';
-    }
-    if (field.hasError('minlength')) {
-      return 'En az 3 karakter giriniz';
-    }
-    if (field.hasError('min')) {
-      return 'Geçerli bir değer giriniz';
-    }
-    if (field.hasError('max')) {
-      return 'Maksimum değeri aştınız';
-    }
-    if (field.hasError('pattern')) {
-      return 'Geçerli bir format giriniz (Örn: TEK-2024-001)';
-    }
-    return '';
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach((control) => {
-      control.markAsTouched();
-
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
-      }
-    });
+  isDetailFieldInvalid(index: number, fieldName: string): boolean {
+    const detail = this.details.at(index);
+    const field = detail.get(fieldName);
+    return field ? field.invalid && (field.dirty || field.touched) : false;
   }
 }

@@ -1,23 +1,51 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Customer } from '@app/interfaces';
 import { BaseService } from './base.service';
-import { Observable } from 'rxjs';
+import { Customer } from '../models/database.types';
+import { SupabaseService } from './supabase.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CustomerService extends BaseService<Customer> {
-  protected override endpoint = 'customers';
+  protected tableName = 'customers';
 
-  constructor(protected override http: HttpClient) {
-    super(http);
+  constructor(supabaseService: SupabaseService) {
+    super(supabaseService);
   }
 
-  // Özel müşteri metodları
-  getCustomersByLeadType(leadTypeCode: string): Observable<Customer[]> {
-    return this.http.get<Customer[]>(
-      `${this.baseUrl}/${this.endpoint}/by-lead-type/${leadTypeCode}`
-    );
+  async searchCustomers(query: string): Promise<Customer[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('customers')
+      .select('*')
+      .or(
+        `name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`
+      );
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getCustomerWithProposals(
+    customerId: string
+  ): Promise<Customer & { proposals: any[] }> {
+    const { data, error } = await this.supabaseService.client
+      .from('customers')
+      .select(
+        `
+        *,
+        proposals (
+          *,
+          proposal_details (
+            *,
+            product:products (*)
+          )
+        )
+      `
+      )
+      .eq('id', customerId)
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }

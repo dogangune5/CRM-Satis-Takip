@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -20,7 +21,7 @@ import { Router } from '@angular/router';
               [(ngModel)]="username"
               name="username"
               required
-              placeholder="admin@example.com"
+              placeholder="E-posta adresiniz"
             />
           </div>
           <div class="form-group">
@@ -31,13 +32,15 @@ import { Router } from '@angular/router';
               [(ngModel)]="password"
               name="password"
               required
-              placeholder="admin123"
+              placeholder="Şifreniz"
             />
           </div>
           @if (errorMessage) {
           <div class="error-message">{{ errorMessage }}</div>
           }
-          <button type="submit">Giriş Yap</button>
+          <button type="submit" [disabled]="isLoading">
+            {{ isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap' }}
+          </button>
         </form>
       </div>
     </div>
@@ -82,8 +85,12 @@ import { Router } from '@angular/router';
         cursor: pointer;
         margin-top: 1rem;
       }
-      button:hover {
+      button:not(:disabled):hover {
         background-color: #0056b3;
+      }
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
       }
       .error-message {
         color: #dc3545;
@@ -101,19 +108,36 @@ export class LoginComponent {
   username: string = '';
   password: string = '';
   errorMessage: string = '';
+  isLoading: boolean = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
-  onLogin() {
-    // Hata mesajını sıfırla
+  async onLogin() {
+    if (!this.username || !this.password) {
+      this.errorMessage = 'Lütfen e-posta ve şifrenizi giriniz.';
+      return;
+    }
+
+    this.isLoading = true;
     this.errorMessage = '';
 
-    // Kullanıcı adı ve şifre kontrolü
-    if (this.username === 'admin@example.com' && this.password === 'admin123') {
-      localStorage.setItem('isLoggedIn', 'true');
-      this.router.navigate(['/dashboard']);
-    } else {
-      this.errorMessage = 'Geçersiz kullanıcı adı veya şifre!';
+    try {
+      const success = await this.authService.login(
+        this.username,
+        this.password
+      );
+      if (success) {
+        await this.router.navigate(['/dashboard']);
+      } else {
+        this.errorMessage =
+          'Giriş başarısız. Lütfen bilgilerinizi kontrol ediniz.';
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      this.errorMessage =
+        'Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.';
+    } finally {
+      this.isLoading = false;
     }
   }
 }
